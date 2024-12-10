@@ -306,4 +306,5 @@ market_maker = MarketMaker(lifted_market_data_dict_of_dfs=lifted_market_data_dic
 
 # Print example DataFrame for a 9-month contract
 print(market_maker.market_data_dict_of_dfs["9M"])
+print(market_maker.market_data_dict_of_jsons["9M"])
 ```
