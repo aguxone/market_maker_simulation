@@ -1,6 +1,7 @@
 # Market Simulation and Market Making Program in Python
 
 This program models a simulated financial market for futures contracts and calculates corrected bid and ask prices to ensure balanced market-making activities. It consists of three main components: `MarketSimulation`, `MarketDataManager`, and `MarketMaker`.
+Both a jupyter notebook and a python script are provided on this repository with basically the same code.
 
 ## Overview of Futures Contracts
 
