@@ -4,7 +4,7 @@ This program models a simulated financial market for futures contracts and calcu
 
 ## Overview of Futures Contracts
 
-A **futures contract** is a standardized agreement to buy or sell an asset at a predetermined price on a specified future date. The "future price" of a future is a useful parameter to estimate the fair price of the future, and is the tool for market makers to post ther bid and ask to the market. It is determined using the formula:
+A **futures contract** is a standardized agreement to buy or sell an asset at a predetermined price on a specified future date. The "future price" of a future is a useful parameter to estimate the fair price of the future, and is the tool for market makers to quote their bids and asks on the market. It is determined using the formula:
 
 $$
 \text{Future Price} = \text{Spot Price} \times (1 + r)^{T}
