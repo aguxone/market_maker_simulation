@@ -4,10 +4,10 @@ This program models a simulated financial market for futures contracts and calcu
 
 ## Overview of Futures Contracts
 
-A **futures contract** is a standardized agreement to buy or sell an asset at a predetermined price on a specified future date. The "future price" of a future is a useful parameter to estimate the fair price of the future, and is the tool for market makers to quote their bids and asks on the market. It is determined using the formula:
+A **futures contract** is a standardized agreement to buy or sell an asset at a predetermined price on a specified future date. The "fair price" of a future (which is a typical "future price") is a useful parameter to estimate the fair price of the future, and is the tool for market makers to quote their bids and asks on the market, that can help them balance it's profit, market liquidity and avoid arbitrage. It is determined using the formula:
 
 $$
-\text{Future Price} = \text{Spot Price} \times (1 + r)^{T}
+\text{Fair Price} = \text{Spot Price} \times (1 + r)^{T}
 $$
 
 Where:
@@ -36,28 +36,58 @@ The `MarketDataManager` class converts JSON representations of the market data i
 
 The `MarketMaker` class processes the market data to:
 
-1. **Calculate Future Prices**: Using the formula above, the future price for each timestamp is derived based on time to maturity.
+1. **Calculate Fair Prices**: Using the formula above, the fair price for each timestamp is derived based on time to maturity.
 2. **Correct Bid and Ask Prices for adequate quoting**:
+
    - The **spread** between the ask and bid price is calculated as:
-     
+
      $\text{Spread} = \text{Ask Price} - \text{Bid Price}$
-     
    - The corrected prices are the prices the market maker is gonna post, and are adjusted to maintain the spread within a proportion of the original spread, e.g:
+
      - Bid Price Corrected:
-       
-       $$\text{Bid Price Corrected} = \text{Bid Price} + (\text{Spread} \times 0.25)$$
-       
+
+        $\text{Bid Price Corrected} = \text{Bid Price} + (\text{Spread} \times (Spot price/ Fair price))$
+     
      - Ask Price Corrected:
-     - 
-       $$\text{Ask Price Corrected} = \text{Ask Price} - (\text{Spread} \times 0.25)$$
        
-3. **Determine Quantities to Post**: Allocates budgeted quantities equally across the duration of each contract.
+        $\text{Ask Price Corrected} = \text{Ask Price} + (\text{Spread} \times (Spot price/ Fair price) )$
+
+3. **Determine Quantities to Post**: Allocates budgeted quantities equally across the duration of each contract, budget is only "eyeballed" on this program.
+
+### Observations on the used Criteria:
+
+- **Bid Corrected Prices**:
+
+  - Can never exceed the current market ask prices (by percentage of the spread as reference).
+  - Are always higher than the market bid prices, meaning the market maker offers more money than the current bids.
+- **Ask Corrected Prices**:
+
+  - Always higher than the current market ask prices, ensuring that the market maker asks for more than the current ask.
+
+---
+
+### Objectives of the Strategy:
+
+- **Unified and Universal Criteria**:
+
+  - The strategy uses a single, consistent approach for both bid and ask prices, applicable across different market conditions.
+- **Increased Trading Volume and Profit from Bids**:
+
+  - By offering bids that are higher than the market, the market maker increases the likelihood of executing trades and capturing profits.
+- **Ask Prices**:
+
+  - Ask prices are adjusted to encourage a balance where the market maker earns lower profits from asks while still contributing to market dynamics.
+- **Push Prices Toward Fair Value**:
+
+  - The adjusted bid and ask prices help move the market prices closer to the fair price, which prevents opportunities for risk-free arbitrage. This ensures the market remains more efficient and aligned with the fair price.
+
+This is a fixed (but dynamic) criteria. It should not replace a more flexible one based on experience and proper analysis of the market, maybe better results might be obtained by adjusting the mentioned percentages differently when having tighter spreads for scenarios of lower volatility, and wider spread when it's higher.
 
 ### Program Flow
 
 1. **Market Simulation**: Initializes a simulated market with synthetic spot prices, bid prices, ask prices, and quantities.
 2. **Data Management**: Converts JSON data from the simulation into Pandas DataFrames.
-3. **Market Making**: Calculates future prices, corrected bid and ask prices, and quantities to post. Generates a JSON representation of the data for API integration.
+3. **Market Making**: Calculates fair prices, corrected bid and ask prices, and quantities to post. Generates a JSON representation of the data for API integration.
 
 ### Example Output
 
@@ -67,9 +97,8 @@ The processed data for a contract (e.g., 9M) includes:
 - Quantities to quote for each timestamp.
 - More data on the dataframe type
 
-
  Dataframe output:
-<div>
+
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -82,8 +111,9 @@ The processed data for a contract (e.g., 9M) includes:
       <th>Ask Quantity</th>
       <th>Time to maturity full</th>
       <th>Time to maturity years</th>
-      <th>Future Price</th>
+      <th>Fair Price</th>
       <th>Spread</th>
+      <th>Spot/Fairprice</th>
       <th>Bid Price corrected</th>
       <th>Ask Price corrected</th>
       <th>Bids to post</th>
@@ -94,85 +124,90 @@ The processed data for a contract (e.g., 9M) includes:
     <tr>
       <th>0</th>
       <td>2024-12-01 00:00:00</td>
-      <td>9.952873</td>
-      <td>9.890845</td>
-      <td>4</td>
-      <td>10.035788</td>
-      <td>4</td>
+      <td>10.022340</td>
+      <td>9.956228</td>
+      <td>7</td>
+      <td>10.083144</td>
+      <td>3</td>
       <td>270 days 00:00:00</td>
       <td>0.739726</td>
-      <td>10.318646</td>
-      <td>0.144943</td>
-      <td>9.927080</td>
-      <td>9.999552</td>
+      <td>10.390666</td>
+      <td>0.126917</td>
+      <td>0.964552</td>
+      <td>10.078645</td>
+      <td>10.205562</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
       <th>1</th>
       <td>2024-12-01 01:00:00</td>
-      <td>10.497999</td>
-      <td>10.432573</td>
-      <td>9</td>
-      <td>10.585455</td>
-      <td>6</td>
+      <td>9.560807</td>
+      <td>9.497740</td>
+      <td>5</td>
+      <td>9.618812</td>
+      <td>8</td>
       <td>269 days 23:00:00</td>
       <td>0.739612</td>
-      <td>10.883745</td>
-      <td>0.152882</td>
-      <td>10.470793</td>
-      <td>10.547234</td>
+      <td>9.912117</td>
+      <td>0.121072</td>
+      <td>0.964558</td>
+      <td>9.614521</td>
+      <td>9.735593</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
       <th>2</th>
       <td>2024-12-01 02:00:00</td>
-      <td>9.980335</td>
-      <td>9.918136</td>
-      <td>6</td>
-      <td>10.063479</td>
+      <td>10.109203</td>
+      <td>10.042518</td>
       <td>3</td>
+      <td>10.170534</td>
+      <td>6</td>
       <td>269 days 22:00:00</td>
       <td>0.739498</td>
-      <td>10.347003</td>
-      <td>0.145343</td>
-      <td>9.954472</td>
-      <td>10.027143</td>
+      <td>10.480605</td>
+      <td>0.128017</td>
+      <td>0.964563</td>
+      <td>10.165998</td>
+      <td>10.294014</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
       <th>3</th>
       <td>2024-12-01 03:00:00</td>
-      <td>9.955430</td>
-      <td>9.893385</td>
+      <td>9.998430</td>
+      <td>9.932475</td>
+      <td>2</td>
+      <td>10.059089</td>
       <td>8</td>
-      <td>10.038366</td>
-      <td>5</td>
       <td>269 days 21:00:00</td>
       <td>0.739384</td>
-      <td>10.321125</td>
-      <td>0.144980</td>
-      <td>9.929631</td>
-      <td>10.002121</td>
+      <td>10.365704</td>
+      <td>0.126614</td>
+      <td>0.964568</td>
+      <td>10.054603</td>
+      <td>10.181217</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
       <th>4</th>
       <td>2024-12-01 04:00:00</td>
-      <td>9.949400</td>
-      <td>9.887394</td>
-      <td>5</td>
-      <td>10.032286</td>
-      <td>4</td>
+      <td>9.686114</td>
+      <td>9.622220</td>
+      <td>3</td>
+      <td>9.744879</td>
+      <td>7</td>
       <td>269 days 20:00:00</td>
       <td>0.739269</td>
-      <td>10.314817</td>
-      <td>0.144892</td>
-      <td>9.923617</td>
-      <td>9.996063</td>
+      <td>10.041861</td>
+      <td>0.122659</td>
+      <td>0.964574</td>
+      <td>9.740534</td>
+      <td>9.863193</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
@@ -192,95 +227,101 @@ The processed data for a contract (e.g., 9M) includes:
       <td>...</td>
       <td>...</td>
       <td>...</td>
+      <td>...</td>
     </tr>
     <tr>
       <th>6476</th>
       <td>2025-08-27 20:00:00</td>
-      <td>10.320334</td>
-      <td>10.256016</td>
-      <td>8</td>
-      <td>10.406310</td>
+      <td>10.843891</td>
+      <td>10.772360</td>
+      <td>6</td>
+      <td>10.909680</td>
       <td>2</td>
       <td>0 days 04:00:00</td>
       <td>0.000457</td>
-      <td>10.320564</td>
-      <td>0.150294</td>
-      <td>10.293589</td>
-      <td>10.368737</td>
+      <td>10.844133</td>
+      <td>0.137320</td>
+      <td>0.999978</td>
+      <td>10.909677</td>
+      <td>11.046997</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
       <th>6477</th>
       <td>2025-08-27 21:00:00</td>
-      <td>9.286088</td>
-      <td>9.228216</td>
-      <td>3</td>
-      <td>9.363448</td>
+      <td>10.057756</td>
+      <td>9.991410</td>
       <td>7</td>
+      <td>10.118775</td>
+      <td>4</td>
       <td>0 days 03:00:00</td>
       <td>0.000342</td>
-      <td>9.286244</td>
-      <td>0.135233</td>
-      <td>9.262024</td>
-      <td>9.329640</td>
+      <td>10.057924</td>
+      <td>0.127365</td>
+      <td>0.999983</td>
+      <td>10.118773</td>
+      <td>10.246138</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
       <th>6478</th>
       <td>2025-08-27 22:00:00</td>
-      <td>9.908305</td>
-      <td>9.846555</td>
+      <td>10.174632</td>
+      <td>10.107516</td>
       <td>9</td>
-      <td>9.990849</td>
-      <td>8</td>
+      <td>10.236361</td>
+      <td>3</td>
       <td>0 days 02:00:00</td>
       <td>0.000228</td>
-      <td>9.908416</td>
-      <td>0.144294</td>
-      <td>9.882628</td>
-      <td>9.954775</td>
+      <td>10.174745</td>
+      <td>0.128845</td>
+      <td>0.999989</td>
+      <td>10.236359</td>
+      <td>10.365204</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
       <th>6479</th>
       <td>2025-08-27 23:00:00</td>
-      <td>10.672938</td>
-      <td>10.606422</td>
-      <td>4</td>
-      <td>10.761851</td>
+      <td>10.036212</td>
+      <td>9.970008</td>
+      <td>6</td>
+      <td>10.097101</td>
       <td>8</td>
       <td>0 days 01:00:00</td>
       <td>0.000114</td>
-      <td>10.672997</td>
-      <td>0.155429</td>
-      <td>10.645279</td>
-      <td>10.722994</td>
+      <td>10.036268</td>
+      <td>0.127092</td>
+      <td>0.999994</td>
+      <td>10.097100</td>
+      <td>10.224192</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
       <th>6480</th>
       <td>2025-08-28 00:00:00</td>
-      <td>9.732181</td>
-      <td>9.671529</td>
+      <td>10.861189</td>
+      <td>10.789543</td>
       <td>9</td>
-      <td>9.813258</td>
-      <td>7</td>
+      <td>10.927082</td>
+      <td>6</td>
       <td>0 days 00:00:00</td>
       <td>0.000000</td>
-      <td>9.732181</td>
-      <td>0.141729</td>
-      <td>9.706961</td>
-      <td>9.777825</td>
+      <td>10.861189</td>
+      <td>0.137539</td>
+      <td>1.000000</td>
+      <td>10.927082</td>
+      <td>11.064622</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
   </tbody>
 </table>
-<p>6481 rows × 14 columns</p>
+<p>6481 rows × 15 columns</p>
 </div>
 
 JSON output:
@@ -290,7 +331,7 @@ JSON output:
 ### Key Parameters
 
 - `spread_criteria_proportion`: Proportion of the spread used to adjust corrected prices, e.g 0.25 would represent 25% of the spread.
-- `capital_cost`: Annualized cost used in future price calculations, a risk-free interest rate would be a good starting estimation (e.g 0.05 for 5%), though many factor can be added such as potential returns of assets, or cost of maintenance of physical assets if owned.
+- `capital_cost`: Annualized cost used in fair price calculations, a risk-free interest rate would be a good starting estimation (e.g 0.05 for 5%), though many factor can be added such as potential returns of assets, or cost of maintenance of physical assets if owned.
 
 ### Example Usage
 
@@ -302,7 +343,7 @@ market_simulation = MarketSimulation(spot_price=10, start_date="2024-12-01 00:00
 lifted_market_data_dict_of_dfs = MarketDataManager(json_data=market_simulation.order_book_json).df
 
 # Perform market making calculations
-market_maker = MarketMaker(lifted_market_data_dict_of_dfs=lifted_market_data_dict_of_dfs, budget=10000, spread_criteria_proportion=0.25, capital_cost=0.05)
+market_maker = MarketMaker(lifted_market_data_dict_of_dfs=lifted_market_data_dict_of_dfs, budget=10000, capital_cost=0.05)
 
 # Print example DataFrame for a 9-month contract
 print(market_maker.market_data_dict_of_dfs["9M"])
