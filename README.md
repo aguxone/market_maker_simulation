@@ -290,7 +290,7 @@ JSON output:
 ### Key Parameters
 
 - `spread_criteria_proportion`: Proportion of the spread used to adjust corrected prices, e.g 0.25 would represent 25% of the spread.
-- `capital_cost`: Annualized cost used in future price calculations, a risk-free interest would be a good starting estimation (e.g 0.05 for 5%), though many factor can be added such as potential returns of assets, or cost of maintenance of physical assets if owned.
+- `capital_cost`: Annualized cost used in future price calculations, a risk-free interest rate would be a good starting estimation (e.g 0.05 for 5%), though many factor can be added such as potential returns of assets, or cost of maintenance of physical assets if owned.
 
 ### Example Usage
 
